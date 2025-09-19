@@ -1,0 +1,17 @@
+# Display Program Management System Requirements
+# Created: 2025-09-19
+
+# Database connectivity
+pyodbc>=4.0.39
+
+# Optional: For enhanced logging and configuration
+python-dotenv>=1.0.0
+
+# Optional: For data analysis and reporting
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Optional: For API development (if needed later)
+# flask>=2.3.0
+# fastapi>=0.100.0
+# uvicorn>=0.23.0
