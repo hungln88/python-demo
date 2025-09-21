@@ -51,6 +51,9 @@ from application.use_cases.evaluate_customer_use_case import EvaluateCustomerUse
 
 # Infrastructure Layer - External Dependencies
 from infrastructure.database.sql_server_connection import SqlServerConnection
+from infrastructure.repositories.sql_server_evaluation_repository import SqlServerEvaluationRepository
+from infrastructure.repositories.sql_server_registration_repository import SqlServerRegistrationRepository
+from infrastructure.repositories.sql_server_program_repository import SqlServerProgramRepository
 
 # Presentation Layer - User Interface
 from presentation.cli.evaluation_cli import EvaluationCLI
@@ -130,16 +133,17 @@ class DependencyContainer:
         
         📝 GIẢI THÍCH:
         - Repository là interface từ Domain Layer
-        - Cần concrete implementation từ Infrastructure Layer
-        - Hiện tại chưa implement, sẽ raise NotImplementedError
+        - Sử dụng concrete implementation SqlServerEvaluationRepository từ Infrastructure Layer
+        - Tự động inject database connection dependency
         
         Returns:
             EvaluationRepository: Evaluation repository instance
         """
         if self._evaluation_repo is None:
-            # TODO: Implement concrete evaluation repository
-            # 📝 GIẢI THÍCH: Cần tạo SqlServerEvaluationRepository trong infrastructure layer
-            raise NotImplementedError("EvaluationRepository implementation needed - Create SqlServerEvaluationRepository in infrastructure layer")
+            print("🔧 Creating evaluation repository...")
+            self._evaluation_repo = SqlServerEvaluationRepository(
+                db_connection=self.get_database_connection()
+            )
         return self._evaluation_repo
     
     def get_registration_repository(self) -> RegistrationRepository:
@@ -148,16 +152,17 @@ class DependencyContainer:
         
         📝 GIẢI THÍCH:
         - Repository là interface từ Domain Layer
-        - Cần concrete implementation từ Infrastructure Layer
-        - Hiện tại chưa implement, sẽ raise NotImplementedError
+        - Sử dụng concrete implementation SqlServerRegistrationRepository từ Infrastructure Layer
+        - Tự động inject database connection dependency
         
         Returns:
             RegistrationRepository: Registration repository instance
         """
         if self._registration_repo is None:
-            # TODO: Implement concrete registration repository
-            # 📝 GIẢI THÍCH: Cần tạo SqlServerRegistrationRepository trong infrastructure layer
-            raise NotImplementedError("RegistrationRepository implementation needed - Create SqlServerRegistrationRepository in infrastructure layer")
+            print("🔧 Creating registration repository...")
+            self._registration_repo = SqlServerRegistrationRepository(
+                db_connection=self.get_database_connection()
+            )
         return self._registration_repo
     
     def get_program_repository(self) -> ProgramRepository:
@@ -166,16 +171,17 @@ class DependencyContainer:
         
         📝 GIẢI THÍCH:
         - Repository là interface từ Domain Layer
-        - Cần concrete implementation từ Infrastructure Layer
-        - Hiện tại chưa implement, sẽ raise NotImplementedError
+        - Sử dụng concrete implementation SqlServerProgramRepository từ Infrastructure Layer
+        - Tự động inject database connection dependency
         
         Returns:
             ProgramRepository: Program repository instance
         """
         if self._program_repo is None:
-            # TODO: Implement concrete program repository
-            # 📝 GIẢI THÍCH: Cần tạo SqlServerProgramRepository trong infrastructure layer
-            raise NotImplementedError("ProgramRepository implementation needed - Create SqlServerProgramRepository in infrastructure layer")
+            print("🔧 Creating program repository...")
+            self._program_repo = SqlServerProgramRepository(
+                db_connection=self.get_database_connection()
+            )
         return self._program_repo
     
     def get_evaluation_service(self) -> EvaluationService:

@@ -19,10 +19,10 @@ class SqlServerConnection:
     
     def __init__(
         self, 
-        server: str = "10.90.97.14", 
-        database: str = "WMS", 
-        username: str = "sa", 
-        password: str = "abcd@1234", 
+        server: str = "xxxx", 
+        database: str = "xxxx", 
+        username: str = "xxxx", 
+        password: str = "xx@xxx", 
         trusted_connection: bool = False
     ):
         """
