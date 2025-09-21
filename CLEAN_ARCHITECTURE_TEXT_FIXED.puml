@@ -1,0 +1,41 @@
+@startuml
+title Clean Architecture Flow
+
+package "PRESENTATION LAYER" {
+  [EvaluationCLI]
+  [REST API]
+}
+
+package "APPLICATION LAYER" {
+  [EvaluateCustomerUseCase]
+}
+
+package "DOMAIN LAYER" {
+  [EvaluationService]
+  [Entities]
+  [Repository Interfaces]
+}
+
+package "INFRASTRUCTURE LAYER" {
+  [SqlServerConnection]
+  [Repository Implementations]
+}
+
+[Configuration]
+[Dependency Container]
+
+EvaluationCLI --> EvaluateCustomerUseCase
+REST API --> EvaluateCustomerUseCase
+EvaluateCustomerUseCase --> EvaluationService
+EvaluationService --> Repository Interfaces
+Repository Implementations ..> Repository Interfaces
+Repository Implementations --> SqlServerConnection
+Dependency Container --> EvaluationCLI
+Dependency Container --> EvaluateCustomerUseCase
+Dependency Container --> EvaluationService
+Dependency Container --> Repository Implementations
+Dependency Container --> SqlServerConnection
+SqlServerConnection --> Configuration
+Dependency Container --> Configuration
+
+@enduml

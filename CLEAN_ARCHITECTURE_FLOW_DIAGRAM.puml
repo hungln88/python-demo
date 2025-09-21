@@ -1,0 +1,393 @@
+@startuml Clean Architecture Flow Diagram
+!theme plain
+title Clean Architecture Flow Diagram - Display Program Management System
+note right
+  📚 HƯỚNG DẪN CHO NGƯỜI MỚI:
+  ============================
+  
+  Diagram này mô tả flow code trong Clean Architecture:
+  1. PRESENTATION LAYER: Giao diện người dùng (CLI, Web, API)
+  2. APPLICATION LAYER: Use Cases và orchestration
+  3. DOMAIN LAYER: Business logic và entities
+  4. INFRASTRUCTURE LAYER: External dependencies (Database, APIs)
+  
+  Nguyên tắc quan trọng:
+  - Dependencies chỉ được trỏ vào trong (inner layers)
+  - Domain layer không phụ thuộc vào bất kỳ layer nào
+  - Sử dụng interfaces để tách biệt implementation
+end note
+
+!define RECTANGLE class
+!define INTERFACE interface
+!define COMPONENT component
+!define PACKAGE package
+
+' ========================================
+' PRESENTATION LAYER - User Interface
+' ========================================
+package "PRESENTATION LAYER" as PresentationLayer #lightblue {
+  component "EvaluationCLI" as CLI {
+    + run_interactive()
+    + run_single_evaluation()
+    + run_batch_evaluation()
+    + _display_result()
+  }
+  
+  component "REST API" as API #lightgray {
+    note right: Future implementation
+  }
+  
+  component "Web UI" as WebUI #lightgray {
+    note right: Future implementation
+  }
+}
+
+' ========================================
+' APPLICATION LAYER - Use Cases
+' ========================================
+package "APPLICATION LAYER" as ApplicationLayer #lightgreen {
+  component "EvaluateCustomerUseCase" as UseCase {
+    + execute(yyyymm, customer_code, program_code)
+    + execute_with_validation()
+  }
+  
+  component "DTOs" as DTOs #lightgray {
+    note right: Data Transfer Objects
+  }
+}
+
+' ========================================
+' DOMAIN LAYER - Business Logic
+' ========================================
+package "DOMAIN LAYER" as DomainLayer #lightyellow {
+  
+  ' Domain Services
+  component "EvaluationService" as DomainService {
+    + evaluate_customer()
+    + get_evaluation_result()
+    + evaluate_all_customers_for_program()
+    + get_eligible_customers()
+  }
+  
+  ' Domain Entities
+  package "Entities" as Entities {
+    component "Customer" as CustomerEntity {
+      + customer_code: str
+      + name: str
+      + email: str
+      + __eq__()
+      + __hash__()
+    }
+    
+    component "Program" as ProgramEntity {
+      + program_code: str
+      + name: str
+      + is_active: bool
+    }
+    
+    component "RegisterItem" as RegisterItemEntity {
+      + yyyymm: int
+      + program_code: str
+      + type_code: str
+      + item: str
+      + facing: int
+      + unit: int
+    }
+    
+    component "ConditionGroup" as ConditionGroupEntity {
+      + yyyymm: int
+      + program_code: str
+      + group: int
+      + type_code: str
+      + group_point: int
+    }
+    
+    component "ConditionItem" as ConditionItemEntity {
+      + yyyymm: int
+      + program_code: str
+      + group: int
+      + condition_code: str
+      + condition_min_value: int
+      + condition_point: int
+      + meets_minimum(actual_value): bool
+    }
+    
+    component "AuditPicture" as AuditPictureEntity {
+      + yyyymm: int
+      + customer_code: str
+      + condition_code: str
+      + value: str
+      + audit_date: datetime
+      + numeric_value: int
+    }
+    
+    component "Registration" as RegistrationEntity {
+      + yyyymm: int
+      + program_code: str
+      + customer_code: str
+      + display_type: str
+      + register_qty: int
+      + status: bool
+      + is_active: bool
+      + activate()
+      + deactivate()
+    }
+    
+    component "CustomerEvaluationResult" as EvaluationResultEntity {
+      + yyyymm: int
+      + customer_code: str
+      + program_code: str
+      + total_points: int
+      + max_possible_points: int
+      + meets_criteria: bool
+      + failed_conditions: List[str]
+      + registration_status: bool
+      + is_eligible_for_reward: bool
+      + success_rate: float
+      + get_failure_summary(): str
+    }
+  }
+  
+  ' Repository Interfaces
+  package "Repository Interfaces" as RepoInterfaces {
+    interface "CustomerRepository" as CustomerRepoInterface {
+      + get_by_code(customer_code)
+      + get_all()
+      + save(customer)
+      + update(customer)
+      + delete(customer_code)
+      + exists(customer_code)
+    }
+    
+    interface "ProgramRepository" as ProgramRepoInterface {
+      + get_by_code(program_code)
+      + get_all()
+      + get_register_items(yyyymm, program_code)
+      + get_register_item(yyyymm, program_code, display_type)
+      + save_register_item(register_item)
+    }
+    
+    interface "EvaluationRepository" as EvaluationRepoInterface {
+      + get_condition_groups(yyyymm, program_code, type_code)
+      + get_condition_items_by_group(yyyymm, program_code, group)
+      + get_audit_results(yyyymm, customer_code)
+      + get_audit_result(yyyymm, customer_code, condition_code)
+      + save_audit_result(audit)
+      + save_evaluation_result(result)
+      + get_evaluation_result(yyyymm, customer_code, program_code)
+    }
+    
+    interface "RegistrationRepository" as RegistrationRepoInterface {
+      + get_registrations(yyyymm, customer_code, active_only)
+      + get_registration(yyyymm, customer_code, program_code, display_type)
+      + get_customer_programs(yyyymm, customer_code)
+      + get_program_customers(yyyymm, program_code)
+      + save_registration(registration)
+      + update_registration(registration)
+      + delete_registration(yyyymm, customer_code, program_code, display_type)
+      + exists(yyyymm, customer_code, program_code, display_type)
+    }
+  }
+}
+
+' ========================================
+' INFRASTRUCTURE LAYER - External Dependencies
+' ========================================
+package "INFRASTRUCTURE LAYER" as InfrastructureLayer #lightcoral {
+  
+  ' Database Infrastructure
+  component "SqlServerConnection" as DatabaseConnection {
+    + __init__(server, database, username, password)
+    + get_connection()
+    + test_connection(): bool
+    + get_server_info(): dict
+  }
+  
+  ' Repository Implementations
+  package "Repository Implementations" as RepoImplementations #lightgray {
+    component "SqlServerCustomerRepository" as CustomerRepoImpl #lightgray {
+      note right: TODO: Implement
+    }
+    
+    component "SqlServerProgramRepository" as ProgramRepoImpl #lightgray {
+      note right: TODO: Implement
+    }
+    
+    component "SqlServerEvaluationRepository" as EvaluationRepoImpl #lightgray {
+      note right: TODO: Implement
+    }
+    
+    component "SqlServerRegistrationRepository" as RegistrationRepoImpl #lightgray {
+      note right: TODO: Implement
+    }
+  }
+  
+  ' External APIs
+  component "External APIs" as ExternalAPIs #lightgray {
+    note right: Future implementation
+  }
+}
+
+' ========================================
+' CONFIGURATION LAYER
+' ========================================
+package "CONFIGURATION LAYER" as ConfigLayer #lightpink {
+  component "Settings" as Settings {
+    + default(): Settings
+    + from_env(): Settings
+  }
+  
+  component "DatabaseSettings" as DatabaseSettings {
+    + server: str
+    + database: str
+    + username: str
+    + password: str
+    + trusted_connection: bool
+    + from_env(): DatabaseSettings
+  }
+  
+  component "LoggingSettings" as LoggingSettings {
+    + level: str
+    + format: str
+    + file_path: str
+    + from_env(): LoggingSettings
+  }
+}
+
+' ========================================
+' DEPENDENCY INJECTION CONTAINER
+' ========================================
+component "DependencyContainer" as Container #lightsteelblue {
+  + get_database_connection(): SqlServerConnection
+  + get_evaluation_repository(): EvaluationRepository
+  + get_registration_repository(): RegistrationRepository
+  + get_program_repository(): ProgramRepository
+  + get_evaluation_service(): EvaluationService
+  + get_evaluation_use_case(): EvaluateCustomerUseCase
+  + get_evaluation_cli(): EvaluationCLI
+}
+
+' ========================================
+' DEPENDENCY FLOW - Dependencies chỉ trỏ vào trong
+' ========================================
+
+' Presentation Layer dependencies
+CLI --> UseCase : uses
+API --> UseCase : uses (future)
+WebUI --> UseCase : uses (future)
+
+' Application Layer dependencies
+UseCase --> DomainService : uses
+
+' Domain Layer dependencies
+DomainService --> CustomerRepoInterface : uses
+DomainService --> ProgramRepoInterface : uses
+DomainService --> EvaluationRepoInterface : uses
+DomainService --> RegistrationRepoInterface : uses
+
+' Infrastructure Layer implements Domain interfaces
+CustomerRepoImpl ..|> CustomerRepoInterface : implements
+ProgramRepoImpl ..|> ProgramRepoInterface : implements
+EvaluationRepoImpl ..|> EvaluationRepoInterface : implements
+RegistrationRepoImpl ..|> RegistrationRepoInterface : implements
+
+' Infrastructure Layer dependencies
+CustomerRepoImpl --> DatabaseConnection : uses
+ProgramRepoImpl --> DatabaseConnection : uses
+EvaluationRepoImpl --> DatabaseConnection : uses
+RegistrationRepoImpl --> DatabaseConnection : uses
+
+' Container manages all dependencies
+Container --> CLI : creates
+Container --> UseCase : creates
+Container --> DomainService : creates
+Container --> CustomerRepoImpl : creates
+Container --> ProgramRepoImpl : creates
+Container --> EvaluationRepoImpl : creates
+Container --> RegistrationRepoImpl : creates
+Container --> DatabaseConnection : creates
+
+' Configuration dependencies
+DatabaseConnection --> DatabaseSettings : uses
+Container --> Settings : uses
+
+' ========================================
+' BUSINESS FLOW - Luồng xử lý nghiệp vụ
+' ========================================
+
+note top of CLI
+  📋 BUSINESS FLOW EXAMPLE:
+  ========================
+  
+  1. User chạy CLI: py src/main.py
+  2. CLI gọi Use Case: evaluate_customer()
+  3. Use Case gọi Domain Service: evaluate_customer()
+  4. Domain Service sử dụng Repository Interfaces
+  5. Repository Implementations truy cập Database
+  6. Kết quả trả về theo thứ tự ngược lại
+  
+  🎯 LỢI ÍCH:
+  - Tách biệt rõ ràng giữa các layer
+  - Dễ dàng test với mocks
+  - Dễ dàng thay đổi implementation
+  - Code dễ đọc và maintain
+end note
+
+' ========================================
+' TESTING STRATEGY
+' ========================================
+package "TESTING LAYER" as TestingLayer #lightcyan {
+  component "Unit Tests" as UnitTests {
+    + test_domain_entities()
+    + test_domain_services()
+    + test_use_cases()
+  }
+  
+  component "Integration Tests" as IntegrationTests {
+    + test_database_connection()
+    + test_repository_implementations()
+  }
+  
+  component "End-to-End Tests" as E2ETests {
+    + test_complete_workflow()
+    + test_cli_interface()
+  }
+}
+
+' Testing dependencies
+UnitTests --> Entities : tests
+UnitTests --> DomainService : tests
+UnitTests --> UseCase : tests
+IntegrationTests --> DatabaseConnection : tests
+IntegrationTests --> CustomerRepoImpl : tests
+E2ETests --> CLI : tests
+
+' ========================================
+' CLEAN ARCHITECTURE PRINCIPLES
+' ========================================
+note bottom
+  🏗️ CLEAN ARCHITECTURE PRINCIPLES:
+  =================================
+  
+  1. DEPENDENCY RULE:
+     - Dependencies chỉ được trỏ vào trong (inner layers)
+     - Domain layer không phụ thuộc vào bất kỳ layer nào
+  
+  2. INTERFACE SEGREGATION:
+     - Sử dụng interfaces thay vì concrete classes
+     - Mỗi interface chỉ chứa methods cần thiết
+  
+  3. SINGLE RESPONSIBILITY:
+     - Mỗi class chỉ có một lý do để thay đổi
+     - Tách biệt concerns rõ ràng
+  
+  4. OPEN/CLOSED PRINCIPLE:
+     - Mở cho extension, đóng cho modification
+     - Sử dụng interfaces và inheritance
+  
+  5. DEPENDENCY INVERSION:
+     - High-level modules không phụ thuộc vào low-level modules
+     - Cả hai đều phụ thuộc vào abstractions
+end note
+
+@enduml

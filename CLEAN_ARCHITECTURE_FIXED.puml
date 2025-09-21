@@ -1,0 +1,41 @@
+@startuml
+title Clean Architecture Flow
+
+package "PRESENTATION" {
+  [CLI]
+  [API]
+}
+
+package "APPLICATION" {
+  [UseCase]
+}
+
+package "DOMAIN" {
+  [Service]
+  [Entities]
+  [Interfaces]
+}
+
+package "INFRASTRUCTURE" {
+  [Database]
+  [Repository]
+}
+
+[Config]
+[Container]
+
+CLI --> UseCase
+API --> UseCase
+UseCase --> Service
+Service --> Interfaces
+Repository ..> Interfaces
+Repository --> Database
+Container --> CLI
+Container --> UseCase
+Container --> Service
+Container --> Repository
+Container --> Database
+Database --> Config
+Container --> Config
+
+@enduml

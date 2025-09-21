@@ -1,0 +1,224 @@
+@startuml Clean Architecture Sequence Diagram
+!theme plain
+title Clean Architecture Sequence Diagram - Customer Evaluation Flow
+
+note top
+  📚 HƯỚNG DẪN CHO NGƯỜI MỚI:
+  ============================
+  
+  Sequence Diagram này mô tả flow xử lý cụ thể khi user đánh giá khách hàng:
+  
+  🎯 SCENARIO: User chạy CLI để đánh giá khách hàng CUST001 trong chương trình PROG001
+  
+  🔄 FLOW:
+  1. User tương tác với CLI
+  2. CLI gọi Use Case
+  3. Use Case gọi Domain Service
+  4. Domain Service sử dụng Repository Interfaces
+  5. Repository Implementations truy cập Database
+  6. Kết quả trả về theo thứ tự ngược lại
+  
+  📝 LƯU Ý: Mỗi arrow đại diện cho một method call
+end note
+
+actor "👤 User" as User
+participant "🖥️ EvaluationCLI" as CLI
+participant "📋 EvaluateCustomerUseCase" as UseCase
+participant "🧠 EvaluationService" as DomainService
+participant "📊 EvaluationRepository" as EvaluationRepo
+participant "📝 RegistrationRepository" as RegistrationRepo
+participant "📋 ProgramRepository" as ProgramRepo
+participant "🗄️ SqlServerConnection" as Database
+participant "📊 Database" as DB
+
+' ========================================
+' MAIN FLOW - Customer Evaluation
+' ========================================
+
+== 🚀 User chạy ứng dụng ==
+User -> CLI: py src/main.py
+activate CLI
+
+CLI -> CLI: run_interactive()
+note right: Hiển thị menu cho user
+
+== 📝 User nhập thông tin ==
+User -> CLI: Nhập yyyymm=202509, customer_code=CUST001, program_code=PROG001
+CLI -> CLI: validate_input()
+
+== 🔄 Gọi Use Case ==
+CLI -> UseCase: execute(yyyymm=202509, customer_code=CUST001, program_code=PROG001)
+activate UseCase
+
+UseCase -> UseCase: validate_parameters()
+note right: Kiểm tra tham số đầu vào
+
+== 🧠 Gọi Domain Service ==
+UseCase -> DomainService: evaluate_customer(yyyymm=202509, customer_code=CUST001, program_code=PROG001)
+activate DomainService
+
+== 📝 Bước 1: Kiểm tra đăng ký ==
+DomainService -> RegistrationRepo: get_registrations(yyyymm=202509, customer_code=CUST001, active_only=False)
+activate RegistrationRepo
+
+RegistrationRepo -> Database: get_connection()
+activate Database
+Database -> DB: SELECT * FROM register WHERE yyyymm=202509 AND customer_code='CUST001'
+DB --> Database: Registration data
+Database --> RegistrationRepo: List[Registration]
+deactivate Database
+
+RegistrationRepo --> DomainService: List[Registration]
+deactivate RegistrationRepo
+
+DomainService -> DomainService: Tìm đăng ký cho PROG001
+note right: Tìm registration có program_code = 'PROG001'
+
+alt Không tìm thấy đăng ký
+  DomainService --> UseCase: CustomerEvaluationResult(meets_criteria=False, failed_conditions=["NOT_REGISTERED"])
+  UseCase --> CLI: Error result
+  CLI --> User: ❌ Khách hàng chưa đăng ký chương trình
+else Tìm thấy đăng ký
+  == 📋 Bước 2: Lấy cấu hình chương trình ==
+  DomainService -> ProgramRepo: get_register_item(yyyymm=202509, program_code=PROG001, display_type=KE_3_O)
+  activate ProgramRepo
+  
+  ProgramRepo -> Database: get_connection()
+  activate Database
+  Database -> DB: SELECT * FROM register_item WHERE yyyymm=202509 AND program_code='PROG001' AND item='KE_3_O'
+  DB --> Database: RegisterItem data
+  Database --> ProgramRepo: RegisterItem
+  deactivate Database
+  
+  ProgramRepo --> DomainService: RegisterItem(type_code=TYPE_BEVERAGE)
+  deactivate ProgramRepo
+  
+  == 📊 Bước 3: Lấy condition groups ==
+  DomainService -> EvaluationRepo: get_condition_groups(yyyymm=202509, program_code=PROG001, type_code=TYPE_BEVERAGE)
+  activate EvaluationRepo
+  
+  EvaluationRepo -> Database: get_connection()
+  activate Database
+  Database -> DB: SELECT * FROM condition_group WHERE yyyymm=202509 AND program_code='PROG001' AND type_code='TYPE_BEVERAGE'
+  DB --> Database: ConditionGroup data
+  Database --> EvaluationRepo: List[ConditionGroup]
+  deactivate Database
+  
+  EvaluationRepo --> DomainService: List[ConditionGroup]
+  deactivate EvaluationRepo
+  
+  == 📸 Bước 4: Lấy kết quả audit ==
+  DomainService -> EvaluationRepo: get_audit_results(yyyymm=202509, customer_code=CUST001)
+  activate EvaluationRepo
+  
+  EvaluationRepo -> Database: get_connection()
+  activate Database
+  Database -> DB: SELECT * FROM audit_picture WHERE yyyymm=202509 AND customer_code='CUST001'
+  DB --> Database: AuditPicture data
+  Database --> EvaluationRepo: List[AuditPicture]
+  deactivate Database
+  
+  EvaluationRepo --> DomainService: List[AuditPicture]
+  deactivate EvaluationRepo
+  
+  == 🎯 Bước 5: Đánh giá theo từng group ==
+  loop Cho mỗi ConditionGroup
+    DomainService -> EvaluationRepo: get_condition_items_by_group(yyyymm=202509, program_code=PROG001, group=1)
+    activate EvaluationRepo
+    
+    EvaluationRepo -> Database: get_connection()
+    activate Database
+    Database -> DB: SELECT * FROM condition_item WHERE yyyymm=202509 AND program_code='PROG001' AND group=1
+    DB --> Database: ConditionItem data
+    Database --> EvaluationRepo: List[ConditionItem]
+    deactivate Database
+    
+    EvaluationRepo --> DomainService: List[ConditionItem]
+    deactivate EvaluationRepo
+    
+    DomainService -> DomainService: Đánh giá từng ConditionItem
+    note right: So sánh audit_value vs condition_min_value
+    note right: Tính group_score và so sánh với group_point
+  end
+  
+  == 📊 Bước 6: Xác định kết quả cuối cùng ==
+  DomainService -> DomainService: Tính tổng điểm và xác định meets_criteria
+  note right: meets_criteria = True nếu TẤT CẢ groups đều PASS
+  
+  DomainService -> EvaluationRepo: save_evaluation_result(result)
+  activate EvaluationRepo
+  
+  EvaluationRepo -> Database: get_connection()
+  activate Database
+  Database -> DB: INSERT INTO evaluation_result (...)
+  DB --> Database: Success
+  Database --> EvaluationRepo: Success
+  deactivate Database
+  
+  EvaluationRepo --> DomainService: Success
+  deactivate EvaluationRepo
+  
+  DomainService --> UseCase: CustomerEvaluationResult
+  deactivate DomainService
+end
+
+== 📋 Trả kết quả về Use Case ==
+UseCase -> UseCase: Format result as dictionary
+UseCase --> CLI: Dictionary result
+deactivate UseCase
+
+== 🖥️ Hiển thị kết quả cho User ==
+CLI -> CLI: _display_result(result)
+CLI --> User: 📊 Kết quả đánh giá chi tiết
+deactivate CLI
+
+' ========================================
+' ERROR HANDLING FLOW
+' ========================================
+== ❌ Xử lý lỗi ==
+note over User, DB
+  🔧 ERROR HANDLING:
+  =================
+  
+  Nếu có lỗi xảy ra ở bất kỳ bước nào:
+  1. Database connection failed → Hiển thị lỗi kết nối
+  2. Repository method failed → Hiển thị lỗi dữ liệu
+  3. Domain service failed → Hiển thị lỗi nghiệp vụ
+  4. Use case failed → Hiển thị lỗi ứng dụng
+  5. CLI failed → Hiển thị lỗi giao diện
+  
+  🎯 LỢI ÍCH:
+  - Mỗi layer xử lý lỗi phù hợp với trách nhiệm
+  - User nhận được thông báo lỗi rõ ràng
+  - Dễ dàng debug và fix lỗi
+end note
+
+' ========================================
+' TESTING FLOW
+' ========================================
+== 🧪 Testing Flow ==
+note over User, DB
+  🧪 TESTING STRATEGY:
+  ===================
+  
+  UNIT TESTS:
+  - Test Domain Entities: Tạo objects và test business logic
+  - Test Domain Services: Mock repositories và test business logic
+  - Test Use Cases: Mock services và test orchestration
+  
+  INTEGRATION TESTS:
+  - Test Repository Implementations: Sử dụng test database
+  - Test Database Connection: Kiểm tra kết nối thực tế
+  
+  END-TO-END TESTS:
+  - Test Complete Workflow: Từ CLI đến Database
+  - Test Error Scenarios: Các trường hợp lỗi khác nhau
+  
+  🎯 LỢI ÍCH:
+  - Mỗi layer có thể test độc lập
+  - Dễ dàng mock dependencies
+  - Test coverage cao
+  - Phát hiện lỗi sớm
+end note
+
+@enduml

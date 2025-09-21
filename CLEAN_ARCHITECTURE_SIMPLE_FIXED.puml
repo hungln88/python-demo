@@ -1,0 +1,34 @@
+@startuml
+title Clean Architecture
+
+[CLI] --> [UseCase]
+[API] --> [UseCase]
+[UseCase] --> [Service]
+[Service] --> [Interfaces]
+[Repository] ..> [Interfaces]
+[Repository] --> [Database]
+[Container] --> [CLI]
+[Container] --> [UseCase]
+[Container] --> [Service]
+[Container] --> [Repository]
+[Container] --> [Database]
+[Database] --> [Config]
+[Container] --> [Config]
+
+note right of [CLI]
+  PRESENTATION LAYER
+end note
+
+note right of [UseCase]
+  APPLICATION LAYER
+end note
+
+note right of [Service]
+  DOMAIN LAYER
+end note
+
+note right of [Database]
+  INFRASTRUCTURE LAYER
+end note
+
+@enduml

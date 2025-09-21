@@ -1,238 +1,279 @@
-# Display Program Management System
-## Hệ thống Quản lý Chương trình Trưng bày
+# Display Program Management System - Clean Architecture
 
-A comprehensive Python application for managing display programs, customer registrations, audits, and reward eligibility checking.
+## 🎯 Tổng quan dự án
 
-## 🏗️ System Architecture
+**Display Program Management System** là hệ thống quản lý chương trình trưng bày sản phẩm được xây dựng theo **Clean Architecture**. Hệ thống giúp đánh giá khách hàng có đủ điều kiện nhận thưởng dựa trên các tiêu chí trưng bày sản phẩm.
 
-### Database Schema
-- **register_item**: Program configurations (display types, facing, units)
-- **register**: Customer registrations for programs
-- **condition_group**: Criteria groups for programs
-- **condition_item**: Specific condition requirements and points
-- **audit_picture**: Audit results from field inspections
+## 📚 Hướng dẫn cho người mới học Clean Architecture
 
-### Business Flow
-1. **Program Configuration**: Operations team configures display programs in `register_item`
-2. **Criteria Setup**: Configure evaluation criteria in `condition_group` and `condition_item`
-3. **Customer Registration**: Customers/shopping centers register for programs in `register`
-4. **Audit Process**: Company supervisors conduct audits and record results in `audit_picture`
-5. **Evaluation**: System evaluates customers against criteria to determine reward eligibility
+### Clean Architecture là gì?
 
-## 🚀 Setup Instructions
+Clean Architecture là một kiến trúc phần mềm được thiết kế bởi **Robert C. Martin (Uncle Bob)**. Mục tiêu chính là tạo ra code:
+- ✅ **Dễ test** - Có thể test từng phần riêng biệt
+- ✅ **Dễ bảo trì** - Dễ đọc, hiểu và sửa đổi
+- ✅ **Linh hoạt** - Dễ dàng thay đổi implementation
+- ✅ **Mở rộng** - Dễ dàng thêm tính năng mới
 
-### Prerequisites
-- Python 3.8+
-- SQL Server (LocalDB, Express, or Full)
-- ODBC Driver 17 for SQL Server
+### Tại sao cần Clean Architecture?
 
-### Installation
+#### 1. **Separation of Concerns (Tách biệt mối quan tâm)**
+- Mỗi layer có trách nhiệm riêng biệt
+- Dễ hiểu và debug
+- Dễ thay đổi một phần mà không ảnh hưởng phần khác
 
-1. **Clone/Download the project files**
-2. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+#### 2. **Dependency Inversion (Đảo ngược phụ thuộc)**
+- High-level modules không phụ thuộc vào low-level modules
+- Cả hai đều phụ thuộc vào abstractions (interfaces)
+- Dễ dàng thay đổi implementation
 
-3. **Setup SQL Server Database:**
-   ```bash
-   # Run the schema creation script
-   sqlcmd -S localhost -d master -i schema.sql
-   
-   # Insert sample data
-   sqlcmd -S localhost -d DisplayProgramDB -i sample_data.sql
-   ```
+#### 3. **Testability (Khả năng test)**
+- Domain logic có thể test độc lập
+- Infrastructure có thể mock
+- Dễ dàng viết unit tests
 
-4. **Configure Database Connection:**
-   - Edit `database.py` if needed to adjust connection settings
-   - Default: Uses Windows Authentication to connect to localhost
-   - For custom settings, modify the `DatabaseConnection` initialization in `main.py`
+#### 4. **Maintainability (Khả năng bảo trì)**
+- Code dễ đọc và hiểu
+- Dễ thêm tính năng mới
+- Dễ sửa lỗi
 
-### Alternative SQL Server Setup
-If you don't have SQL Server installed, you can use SQL Server Express or LocalDB:
+## 🏗️ Cấu trúc Clean Architecture
 
+```
+src/
+├── domain/                    # Domain Layer - Business Logic
+│   ├── entities/             # Core Business Objects
+│   │   ├── customer.py       # Customer Entity
+│   │   ├── program.py        # Program & RegisterItem Entities
+│   │   ├── evaluation.py     # Evaluation Entities
+│   │   └── registration.py   # Registration Entity
+│   ├── repositories/         # Repository Interfaces
+│   │   ├── customer_repository.py
+│   │   ├── program_repository.py
+│   │   ├── evaluation_repository.py
+│   │   └── registration_repository.py
+│   └── services/             # Domain Services
+│       └── evaluation_service.py
+├── application/              # Application Layer - Use Cases
+│   ├── use_cases/           # Use Cases
+│   │   └── evaluate_customer_use_case.py
+│   └── dtos/                # Data Transfer Objects
+├── infrastructure/          # Infrastructure Layer - External Dependencies
+│   ├── database/            # Database Implementation
+│   │   └── sql_server_connection.py
+│   └── repositories/        # Repository Implementations
+├── presentation/            # Presentation Layer - User Interface
+│   ├── cli/                 # Command Line Interface
+│   │   └── evaluation_cli.py
+│   └── api/                 # REST API (Future)
+├── config/                  # Configuration
+│   └── settings.py
+├── tests/                   # Test Suite
+│   ├── unit/                # Unit Tests
+│   ├── integration/         # Integration Tests
+│   ├── test_clean_architecture.py
+│   └── demo_clean_architecture.py
+└── main.py                  # Dependency Injection Container
+```
+
+## 🎯 Các Layer trong Clean Architecture
+
+### 1. **Domain Layer (Lớp nghiệp vụ)**
+- **Entities**: Các đối tượng nghiệp vụ cốt lõi
+- **Repositories**: Interfaces cho data access
+- **Services**: Business logic phức tạp
+- **Không phụ thuộc** vào bất kỳ layer nào khác
+
+### 2. **Application Layer (Lớp ứng dụng)**
+- **Use Cases**: Các business operations cụ thể
+- **DTOs**: Data transfer objects
+- **Orchestration**: Điều phối domain services
+- **Phụ thuộc** vào Domain Layer
+
+### 3. **Infrastructure Layer (Lớp hạ tầng)**
+- **Database**: Kết nối và truy cập database
+- **External APIs**: Gọi các API bên ngoài
+- **File Systems**: Đọc/ghi file
+- **Implement** các interfaces từ Domain Layer
+
+### 4. **Presentation Layer (Lớp giao diện)**
+- **CLI**: Command line interface
+- **Web UI**: Giao diện web
+- **REST API**: API endpoints
+- **Sử dụng** Use Cases từ Application Layer
+
+## 🚀 Cách sử dụng
+
+### 1. **Chạy Demo (Khuyến nghị cho người mới)**
 ```bash
-# Download SQL Server Express (free)
-# Or install LocalDB
-sqllocaldb create DisplayProgramInstance
-sqllocaldb start DisplayProgramInstance
+# Chạy demo toàn diện với giải thích chi tiết
+py src/tests/demo_clean_architecture.py
 ```
 
-## 🎯 Usage
-
-### Running the Application
+### 2. **Chạy Tests**
 ```bash
-python main.py
+# Chạy tất cả tests
+py src/tests/test_clean_architecture.py
+
+# Chạy tests với pytest (nếu có)
+py -m pytest src/tests/
 ```
 
-### Main Features
-
-#### 1. 📊 Program Summary
-- View performance summary for specific programs
-- Shows eligible/failed customer counts
-- Displays success rates and common failure reasons
-
-#### 2. 👤 Customer Summary  
-- View individual customer performance across all programs
-- Shows points earned vs maximum possible
-- Details program-specific results
-
-#### 3. 🎯 Eligible Customers
-- List customers who meet all criteria for rewards
-- Filter by specific program or view all programs
-- Shows points and success rates
-
-#### 4. ❌ Failed Customers
-- List customers who don't meet criteria
-- Shows specific failure reasons
-- Helps identify areas for improvement
-
-#### 5. 📈 Monthly Report
-- Comprehensive monthly analysis
-- Overall statistics and program breakdowns
-- Customer performance summaries
-
-#### 6. 📝 Registration Management
-- Add new customer registrations
-- Validates against available programs
-- Checks display type compatibility
-
-#### 7. 🔍 Audit Management
-- Add audit results from field inspections
-- Links to condition codes for evaluation
-- Timestamp tracking for audit dates
-
-#### 8. 🧪 Test Scenarios
-- Run predefined test cases with sample data
-- Verify system functionality
-- Demonstrate business logic
-
-## 📋 Sample Data
-
-The system includes comprehensive sample data:
-
-### Programs
-- **PROG001**: Beverage program with 3-slot, 4-slot, and display shelves
-- **PROG002**: Snack program with similar display options
-
-### Customers
-- **CUST001-CUST005**: Various performance levels
-- Mix of active/inactive registrations
-- Different display type preferences
-
-### Evaluation Criteria
-- **CLEANLINESS**: Store cleanliness standards
-- **PRODUCT_AVAILABILITY**: Stock availability requirements  
-- **DISPLAY_QUALITY**: Display presentation standards
-
-### Test Results
-Sample data includes audit results showing:
-- High performers (CUST001, CUST002)
-- Poor performers (CUST003, CUST005)
-- Mixed performance scenarios
-
-## 🔧 Code Structure
-
-```
-├── models.py           # Data models and classes
-├── database.py         # Database connection and operations
-├── business_logic.py   # Core business logic and evaluation
-├── main.py            # CLI application interface
-├── schema.sql         # Database schema creation
-├── sample_data.sql    # Sample data for testing
-├── requirements.txt   # Python dependencies
-└── README.md         # This file
+### 3. **Chạy Ứng dụng**
+```bash
+# Chạy ứng dụng chính
+py src/main.py
 ```
 
-## 🎨 Key Features
+## 📋 Yêu cầu hệ thống
 
-### Business Logic
-- **Comprehensive Evaluation**: Multi-criteria customer assessment
-- **Flexible Scoring**: Point-based evaluation system
-- **Status Tracking**: Active/inactive registration management
-- **Failure Analysis**: Detailed failure reason tracking
+- **Python**: 3.8+
+- **Database**: SQL Server
+- **Dependencies**: pyodbc
 
-### Database Design
-- **Referential Integrity**: Foreign key constraints
-- **Performance Optimized**: Strategic indexing
-- **Scalable Schema**: Supports multiple programs and time periods
+### Cài đặt dependencies
+```bash
+pip install pyodbc
+```
 
-### User Interface
-- **Bilingual Support**: Vietnamese and English
-- **Intuitive Navigation**: Clear menu system
-- **Rich Reporting**: Detailed summaries and statistics
-- **Error Handling**: Comprehensive validation and error messages
+## 🔧 Cấu hình
 
-## 🔍 Business Rules
+### Database Configuration
+```python
+# src/config/settings.py
+DATABASE_SETTINGS = {
+    "server": "xxxx",
+    "database": "xxx", 
+    "username": "xxx",
+    "password": "xxxx"
+}
+```
 
-### Evaluation Logic
-1. Customer must be actively registered for a program
-2. All condition criteria must have audit results
-3. Audit values must meet minimum thresholds
-4. Points awarded only for criteria that meet minimums
-5. Overall eligibility requires meeting ALL criteria
+### Environment Variables
+```bash
+# Có thể override bằng environment variables
+export DB_SERVER=your_server
+export DB_DATABASE=your_database
+export DB_USERNAME=your_username
+export DB_PASSWORD=your_password
+```
 
-### Registration Validation
-- Program must exist for the specified month
-- Display type must be valid for the program
-- Quantity must be positive
-- Duplicate registrations are prevented by primary key
+## 📚 Học Clean Architecture
 
-### Audit Requirements
-- Must link to existing condition codes
-- Values should be numeric for evaluation
-- Timestamp tracking for audit trail
+### 1. **Bắt đầu với Demo**
+```bash
+# Chạy demo để hiểu cấu trúc
+py src/tests/demo_clean_architecture.py
+```
 
-## 🚀 Future Enhancements
+### 2. **Đọc Code**
+- Bắt đầu từ `src/domain/entities/` - Hiểu business objects
+- Tiếp tục với `src/domain/services/` - Hiểu business logic
+- Xem `src/application/use_cases/` - Hiểu use cases
+- Kiểm tra `src/infrastructure/` - Hiểu external dependencies
 
-### Potential Additions
-- **Web Interface**: Flask/FastAPI web application
-- **API Endpoints**: REST API for integration
-- **Advanced Reporting**: Charts and visualizations
-- **Email Notifications**: Automated alerts
-- **Data Export**: Excel/PDF report generation
-- **Multi-language Support**: Full localization
-- **Role-based Access**: User authentication and authorization
+### 3. **Thực hành**
+- Thêm entity mới
+- Tạo use case mới
+- Viết tests
+- Thêm tính năng mới
 
-### Performance Optimizations
-- **Caching**: Redis integration for frequent queries
-- **Batch Processing**: Bulk operations for large datasets
-- **Background Jobs**: Async processing for reports
+### 4. **Tài liệu tham khảo**
+- [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Python Clean Architecture Example](https://github.com/cosmic-python/code)
+- [Dependency Injection in Python](https://python-dependency-injector.ets-labs.org/)
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+# Chạy unit tests
+py src/tests/test_clean_architecture.py
+```
+
+### Test Structure
+- **Domain Tests**: Test business logic
+- **Application Tests**: Test use cases
+- **Integration Tests**: Test cross-layer integration
+- **End-to-End Tests**: Test complete workflows
+
+## 🔄 Development Workflow
+
+### 1. **Thêm Entity mới**
+1. Tạo entity trong `src/domain/entities/`
+2. Thêm business logic
+3. Viết tests
+4. Update repository interface
+
+### 2. **Thêm Use Case mới**
+1. Tạo use case trong `src/application/use_cases/`
+2. Inject dependencies
+3. Viết tests
+4. Update presentation layer
+
+### 3. **Thêm Infrastructure mới**
+1. Implement repository interface
+2. Tạo database connection
+3. Viết tests
+4. Update dependency injection
+
+## 🎯 Best Practices
+
+### 1. **Dependency Rule**
+- Dependencies chỉ được trỏ vào trong (inner layers)
+- Domain layer không phụ thuộc vào bất kỳ layer nào
+
+### 2. **Interface Segregation**
+- Sử dụng interfaces thay vì concrete classes
+- Mỗi interface chỉ chứa methods cần thiết
+
+### 3. **Single Responsibility**
+- Mỗi class chỉ có một lý do để thay đổi
+- Tách biệt concerns rõ ràng
+
+### 4. **Open/Closed Principle**
+- Mở cho extension, đóng cho modification
+- Sử dụng interfaces và inheritance
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Database Connection Failed**
-   - Verify SQL Server is running
-   - Check connection string in `database.py`
-   - Ensure ODBC Driver 17 is installed
+#### 1. **Import Errors**
+```bash
+# Đảm bảo đang chạy từ root directory
+cd E:\Other\demo
+py src/tests/demo_clean_architecture.py
+```
 
-2. **Schema Creation Errors**
-   - Run as administrator if permission issues
-   - Verify database doesn't already exist
-   - Check SQL Server version compatibility
+#### 2. **Database Connection Errors**
+```bash
+# Kiểm tra database connection
+py -c "from src.infrastructure.database.sql_server_connection import SqlServerConnection; print(SqlServerConnection().test_connection())"
+```
 
-3. **Import Errors**
-   - Ensure all dependencies are installed: `pip install -r requirements.txt`
-   - Check Python version (3.8+ required)
+#### 3. **Module Not Found**
+```bash
+# Kiểm tra Python path
+py -c "import sys; print(sys.path)"
+```
 
-4. **No Data Found**
-   - Run `sample_data.sql` to insert test data
-   - Verify correct month format (YYYYMM)
-   - Check database connection
+## 📞 Hỗ trợ
 
-## 📞 Support
+Nếu bạn gặp vấn đề hoặc có câu hỏi:
 
-For issues or questions:
-1. Check the troubleshooting section
-2. Verify sample data is loaded correctly
-3. Test with the provided test scenarios
-4. Check logs for detailed error messages
+1. **Chạy demo** để hiểu cấu trúc
+2. **Đọc code** trong từng layer
+3. **Chạy tests** để kiểm tra
+4. **Tạo issue** nếu cần hỗ trợ
 
----
+## 🎉 Kết luận
 
-**Created**: September 19, 2025  
-**Version**: 1.0  
-**Python**: 3.8+  
-**Database**: SQL Server
+Clean Architecture giúp bạn:
+- ✅ Viết code dễ test và bảo trì
+- ✅ Tách biệt business logic khỏi technical concerns
+- ✅ Dễ dàng thay đổi implementation
+- ✅ Phù hợp cho team development
+
+**Hãy bắt đầu với demo để hiểu rõ hơn về Clean Architecture!** 🚀
+
+![Clean Architecture flow](TP9TQyCW58Rl1V-3zBxz2QDYKn2wD9ZagkJ2kTDEbfbYxCOO--ypcWzisTrxtlFnFePiUoUjktsq63djMY2i1Ma8jUfDEr3kPe7is-uB8uokKhtB2v1L8R8ooojQyME-8ZyO4N9Y1zu4GOj1_2OBj2WEd2NpTGzCzl0mkZi-KpvFbM0_jO9uEJCUKKCVAsuSsBDKeKvly7mlQ5c9cbMroAPRE-d.png)

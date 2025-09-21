@@ -25,36 +25,41 @@ INSERT INTO register_item (yyyymm, program_code, type_code, item, facing, unit) 
 GO
 
 -- Sample data for condition_group (Scheme criteria groups)
+-- PROG001: Chương trình đồ uống với 2 groups
+-- Group 1: Yêu cầu 2/3 sản phẩm đạt tiêu chí (group_point = 2)
+-- Group 2: Yêu cầu 3/3 sản phẩm đạt tiêu chí (group_point = 3)
 INSERT INTO condition_group (yyyymm, program_code, [group], type_code, group_point) VALUES
-(202509, 'PROG001', 1, 'TYPE_BEVERAGE', 100),
-(202509, 'PROG001', 2, 'TYPE_BEVERAGE', 150),
-(202509, 'PROG002', 1, 'TYPE_SNACK', 80),
-(202509, 'PROG002', 2, 'TYPE_SNACK', 120),
-(202510, 'PROG001', 1, 'TYPE_BEVERAGE', 100);
+(202509, 'PROG001', 1, 'TYPE_BEVERAGE', 2),  -- Chỉ cần 2/3 sản phẩm đạt
+(202509, 'PROG001', 2, 'TYPE_BEVERAGE', 3),  -- Cần 3/3 sản phẩm đạt
+(202509, 'PROG002', 1, 'TYPE_SNACK', 2),     -- Chỉ cần 2/3 sản phẩm đạt
+(202509, 'PROG002', 2, 'TYPE_SNACK', 3),     -- Cần 3/3 sản phẩm đạt
+(202510, 'PROG001', 1, 'TYPE_BEVERAGE', 2);  -- Chỉ cần 2/3 sản phẩm đạt
 GO
 
 -- Sample data for condition_item (Specific conditions)
+-- Mỗi condition_item có condition_point = 1 (nếu đạt thì được 1 điểm)
+-- Group sẽ đạt nếu tổng điểm >= group_point
 INSERT INTO condition_item (yyyymm, program_code, [group], condition_code, condition_min_value, condition_point) VALUES
--- PROG001 Group 1 conditions
-(202509, 'PROG001', 1, 'CLEANLINESS', 80, 30),
-(202509, 'PROG001', 1, 'PRODUCT_AVAILABILITY', 90, 40),
-(202509, 'PROG001', 1, 'DISPLAY_QUALITY', 75, 30),
--- PROG001 Group 2 conditions
-(202509, 'PROG001', 2, 'CLEANLINESS', 85, 40),
-(202509, 'PROG001', 2, 'PRODUCT_AVAILABILITY', 95, 60),
-(202509, 'PROG001', 2, 'DISPLAY_QUALITY', 80, 50),
--- PROG002 Group 1 conditions
-(202509, 'PROG002', 1, 'CLEANLINESS', 75, 25),
-(202509, 'PROG002', 1, 'PRODUCT_AVAILABILITY', 85, 35),
-(202509, 'PROG002', 1, 'DISPLAY_QUALITY', 70, 20),
--- PROG002 Group 2 conditions
-(202509, 'PROG002', 2, 'CLEANLINESS', 80, 35),
-(202509, 'PROG002', 2, 'PRODUCT_AVAILABILITY', 90, 50),
-(202509, 'PROG002', 2, 'DISPLAY_QUALITY', 75, 35),
+-- PROG001 Group 1 conditions (3 sản phẩm, cần 2/3 đạt)
+(202509, 'PROG001', 1, 'SPA_CLEANLINESS', 80, 1),      -- Sản phẩm A: Độ sạch sẽ
+(202509, 'PROG001', 1, 'SPA_AVAILABILITY', 90, 1),     -- Sản phẩm A: Tình trạng có hàng
+(202509, 'PROG001', 1, 'SPA_DISPLAY', 75, 1),          -- Sản phẩm A: Chất lượng trưng bày
+-- PROG001 Group 2 conditions (3 sản phẩm, cần 3/3 đạt)
+(202509, 'PROG001', 2, 'SPB_CLEANLINESS', 85, 1),      -- Sản phẩm B: Độ sạch sẽ
+(202509, 'PROG001', 2, 'SPB_AVAILABILITY', 95, 1),     -- Sản phẩm B: Tình trạng có hàng
+(202509, 'PROG001', 2, 'SPB_DISPLAY', 80, 1),          -- Sản phẩm B: Chất lượng trưng bày
+-- PROG002 Group 1 conditions (3 sản phẩm, cần 2/3 đạt)
+(202509, 'PROG002', 1, 'SNACK_CLEANLINESS', 75, 1),    -- Snack: Độ sạch sẽ
+(202509, 'PROG002', 1, 'SNACK_AVAILABILITY', 85, 1),   -- Snack: Tình trạng có hàng
+(202509, 'PROG002', 1, 'SNACK_DISPLAY', 70, 1),        -- Snack: Chất lượng trưng bày
+-- PROG002 Group 2 conditions (3 sản phẩm, cần 3/3 đạt)
+(202509, 'PROG002', 2, 'PREMIUM_CLEANLINESS', 80, 1),  -- Premium: Độ sạch sẽ
+(202509, 'PROG002', 2, 'PREMIUM_AVAILABILITY', 90, 1), -- Premium: Tình trạng có hàng
+(202509, 'PROG002', 2, 'PREMIUM_DISPLAY', 75, 1),      -- Premium: Chất lượng trưng bày
 -- Next month data
-(202510, 'PROG001', 1, 'CLEANLINESS', 80, 30),
-(202510, 'PROG001', 1, 'PRODUCT_AVAILABILITY', 90, 40),
-(202510, 'PROG001', 1, 'DISPLAY_QUALITY', 75, 30);
+(202510, 'PROG001', 1, 'SPA_CLEANLINESS', 80, 1),
+(202510, 'PROG001', 1, 'SPA_AVAILABILITY', 90, 1),
+(202510, 'PROG001', 1, 'SPA_DISPLAY', 75, 1);
 GO
 
 -- Sample data for register (Customer registrations)
@@ -72,27 +77,47 @@ INSERT INTO register (yyyymm, program_code, customer_code, display_type, registe
 GO
 
 -- Sample data for audit_picture (Audit results)
+-- CUST001: Đạt Group 1 (2/3), Không đạt Group 2 (1/3) → FAIL
+-- CUST002: Đạt cả 2 Groups (3/3 và 3/3) → PASS
+-- CUST003: Không đạt cả 2 Groups → FAIL (và inactive)
+-- CUST004: Đạt Group 1 (2/3), Không đạt Group 2 (1/3) → FAIL
+-- CUST005: Đạt Group 1 (2/3), Không đạt Group 2 (1/3) → FAIL
 INSERT INTO audit_picture (yyyymm, customer_code, condition_code, value, audit_date) VALUES
--- CUST001 audit results - Good performance
-(202509, 'CUST001', 'CLEANLINESS', '85', '2025-09-15 10:30:00'),
-(202509, 'CUST001', 'PRODUCT_AVAILABILITY', '92', '2025-09-15 10:30:00'),
-(202509, 'CUST001', 'DISPLAY_QUALITY', '78', '2025-09-15 10:30:00'),
--- CUST002 audit results - Excellent performance
-(202509, 'CUST002', 'CLEANLINESS', '90', '2025-09-16 14:20:00'),
-(202509, 'CUST002', 'PRODUCT_AVAILABILITY', '96', '2025-09-16 14:20:00'),
-(202509, 'CUST002', 'DISPLAY_QUALITY', '85', '2025-09-16 14:20:00'),
--- CUST003 audit results - Poor performance (but inactive anyway)
-(202509, 'CUST003', 'CLEANLINESS', '65', '2025-09-17 09:15:00'),
-(202509, 'CUST003', 'PRODUCT_AVAILABILITY', '70', '2025-09-17 09:15:00'),
-(202509, 'CUST003', 'DISPLAY_QUALITY', '60', '2025-09-17 09:15:00'),
--- CUST004 audit results - Good performance for PROG002
-(202509, 'CUST004', 'CLEANLINESS', '82', '2025-09-18 11:45:00'),
-(202509, 'CUST004', 'PRODUCT_AVAILABILITY', '88', '2025-09-18 11:45:00'),
-(202509, 'CUST004', 'DISPLAY_QUALITY', '76', '2025-09-18 11:45:00'),
--- CUST005 audit results - Below minimum for some criteria
-(202509, 'CUST005', 'CLEANLINESS', '72', '2025-09-19 08:30:00'),
-(202509, 'CUST005', 'PRODUCT_AVAILABILITY', '83', '2025-09-19 08:30:00'),
-(202509, 'CUST005', 'DISPLAY_QUALITY', '68', '2025-09-19 08:30:00');
+-- CUST001 audit results - Group 1: 2/3 đạt, Group 2: 1/3 đạt
+(202509, 'CUST001', 'SPA_CLEANLINESS', '85', '2025-09-15 10:30:00'),      -- Đạt (85 >= 80)
+(202509, 'CUST001', 'SPA_AVAILABILITY', '92', '2025-09-15 10:30:00'),    -- Đạt (92 >= 90)
+(202509, 'CUST001', 'SPA_DISPLAY', '70', '2025-09-15 10:30:00'),         -- Không đạt (70 < 75)
+(202509, 'CUST001', 'SPB_CLEANLINESS', '80', '2025-09-15 10:30:00'),     -- Không đạt (80 < 85)
+(202509, 'CUST001', 'SPB_AVAILABILITY', '90', '2025-09-15 10:30:00'),    -- Không đạt (90 < 95)
+(202509, 'CUST001', 'SPB_DISPLAY', '75', '2025-09-15 10:30:00'),         -- Không đạt (75 < 80)
+-- CUST002 audit results - Group 1: 3/3 đạt, Group 2: 3/3 đạt
+(202509, 'CUST002', 'SPA_CLEANLINESS', '90', '2025-09-16 14:20:00'),     -- Đạt (90 >= 80)
+(202509, 'CUST002', 'SPA_AVAILABILITY', '95', '2025-09-16 14:20:00'),    -- Đạt (95 >= 90)
+(202509, 'CUST002', 'SPA_DISPLAY', '80', '2025-09-16 14:20:00'),         -- Đạt (80 >= 75)
+(202509, 'CUST002', 'SPB_CLEANLINESS', '90', '2025-09-16 14:20:00'),     -- Đạt (90 >= 85)
+(202509, 'CUST002', 'SPB_AVAILABILITY', '98', '2025-09-16 14:20:00'),    -- Đạt (98 >= 95)
+(202509, 'CUST002', 'SPB_DISPLAY', '85', '2025-09-16 14:20:00'),         -- Đạt (85 >= 80)
+-- CUST003 audit results - Group 1: 0/3 đạt, Group 2: 0/3 đạt (inactive anyway)
+(202509, 'CUST003', 'SPA_CLEANLINESS', '65', '2025-09-17 09:15:00'),     -- Không đạt (65 < 80)
+(202509, 'CUST003', 'SPA_AVAILABILITY', '70', '2025-09-17 09:15:00'),    -- Không đạt (70 < 90)
+(202509, 'CUST003', 'SPA_DISPLAY', '60', '2025-09-17 09:15:00'),         -- Không đạt (60 < 75)
+(202509, 'CUST003', 'SPB_CLEANLINESS', '70', '2025-09-17 09:15:00'),     -- Không đạt (70 < 85)
+(202509, 'CUST003', 'SPB_AVAILABILITY', '80', '2025-09-17 09:15:00'),    -- Không đạt (80 < 95)
+(202509, 'CUST003', 'SPB_DISPLAY', '65', '2025-09-17 09:15:00'),         -- Không đạt (65 < 80)
+-- CUST004 audit results - Group 1: 2/3 đạt, Group 2: 1/3 đạt
+(202509, 'CUST004', 'SNACK_CLEANLINESS', '82', '2025-09-18 11:45:00'),   -- Đạt (82 >= 75)
+(202509, 'CUST004', 'SNACK_AVAILABILITY', '88', '2025-09-18 11:45:00'),  -- Đạt (88 >= 85)
+(202509, 'CUST004', 'SNACK_DISPLAY', '65', '2025-09-18 11:45:00'),       -- Không đạt (65 < 70)
+(202509, 'CUST004', 'PREMIUM_CLEANLINESS', '75', '2025-09-18 11:45:00'), -- Không đạt (75 < 80)
+(202509, 'CUST004', 'PREMIUM_AVAILABILITY', '85', '2025-09-18 11:45:00'),-- Không đạt (85 < 90)
+(202509, 'CUST004', 'PREMIUM_DISPLAY', '70', '2025-09-18 11:45:00'),     -- Không đạt (70 < 75)
+-- CUST005 audit results - Group 1: 2/3 đạt, Group 2: 1/3 đạt
+(202509, 'CUST005', 'SNACK_CLEANLINESS', '80', '2025-09-19 08:30:00'),   -- Đạt (80 >= 75)
+(202509, 'CUST005', 'SNACK_AVAILABILITY', '90', '2025-09-19 08:30:00'),  -- Đạt (90 >= 85)
+(202509, 'CUST005', 'SNACK_DISPLAY', '65', '2025-09-19 08:30:00'),       -- Không đạt (65 < 70)
+(202509, 'CUST005', 'PREMIUM_CLEANLINESS', '75', '2025-09-19 08:30:00'), -- Không đạt (75 < 80)
+(202509, 'CUST005', 'PREMIUM_AVAILABILITY', '85', '2025-09-19 08:30:00'),-- Không đạt (85 < 90)
+(202509, 'CUST005', 'PREMIUM_DISPLAY', '70', '2025-09-19 08:30:00');     -- Không đạt (70 < 75)
 GO
 
 PRINT 'Sample data inserted successfully!';

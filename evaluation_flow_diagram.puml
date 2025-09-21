@@ -1,0 +1,120 @@
+@startuml
+!theme plain
+title Customer Evaluation Flow - Display Program Management System
+
+start
+
+:Team cài đặt chương trình;
+note right
+  - Cấu hình các loại kệ trưng bày
+  - Số ô (box), số lượng sản phẩm
+  - Số lượng sản phẩm trong mỗi ô
+end note
+
+:Khách hàng đăng ký trưng bày;
+note right
+  - Chọn loại kệ trưng bày
+  - Số lượng đăng ký theo chu kỳ (yyyymm)
+  - Lưu vào table: register
+end note
+
+:Thiết lập điều kiện đánh giá;
+note right
+  - Tạo condition_group (group_point)
+  - Tạo condition_item (condition_min_value, condition_point)
+  - Ví dụ: 2/3 sản phẩm đạt yêu cầu
+end note
+
+:Nhân viên thị trường audit;
+note right
+  - Kiểm tra thực tế tại điểm bán
+  - Ghi nhận số lượng thực tế
+  - Lưu vào table: audit_picture
+end note
+
+:Đánh giá khách hàng;
+note right
+  **BƯỚC 1: Kiểm tra đăng ký**
+  - Lấy đăng ký của khách hàng
+  - Kiểm tra trạng thái active
+end note
+
+if (Có đăng ký active?) then (Không)
+  :Trả về NOT_REGISTERED;
+  stop
+else (Có)
+  :Lấy thông tin chương trình;
+  note right
+    - Lấy register_item (cấu hình kệ)
+    - Lấy condition_group và condition_item
+  end note
+endif
+
+if (Có cấu hình chương trình?) then (Không)
+  :Trả về NO_CONDITIONS_DEFINED;
+  stop
+else (Có)
+  :Lấy kết quả audit;
+  note right
+    - Lấy audit_picture của khách hàng
+    - Mapping condition_code → audit_value
+  end note
+endif
+
+if (Có đầy đủ kết quả audit?) then (Không)
+  :Trả về INCOMPLETE_AUDIT;
+  stop
+else (Có)
+  :Đánh giá từng group;
+  note right
+    **BƯỚC 2: Đánh giá theo group**
+    - Với mỗi condition_group
+    - Đánh giá các condition_item trong group
+  end note
+endif
+
+:Đánh giá condition_item;
+note right
+  **BƯỚC 3: Đánh giá chi tiết**
+  - So sánh audit_value vs condition_min_value
+  - Nếu đạt: cộng condition_point
+  - Nếu không đạt: ghi nhận failed
+end note
+
+:Kiểm tra đạt group;
+note right
+  **BƯỚC 4: Kiểm tra đạt group**
+  - Tổng điểm đạt được trong group
+  - So sánh với group_point
+  - Nếu >= group_point: PASS group
+  - Nếu < group_point: FAIL group
+end note
+
+if (Đạt tất cả groups?) then (Không)
+  :Trả về FAILED_GROUPS;
+  note right
+    - Liệt kê các group không đạt
+    - Chi tiết các condition không đạt
+  end note
+  stop
+else (Có)
+  :Tính tổng điểm;
+  note right
+    - Tổng điểm tất cả groups đạt được
+    - Tổng điểm tối đa có thể đạt
+  end note
+endif
+
+:Trả về kết quả cuối cùng;
+note right
+  **KẾT QUẢ:**
+  - total_points: Điểm đạt được
+  - max_possible_points: Điểm tối đa
+  - meets_criteria: true/false
+  - is_eligible_for_reward: true/false
+  - failed_conditions: Danh sách lỗi
+end note
+
+stop
+
+@enduml
